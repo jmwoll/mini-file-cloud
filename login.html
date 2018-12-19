@@ -1,0 +1,67 @@
+
+Enter password: <form><input id="password" type="password">
+</input>
+<button type="submit" onclick="return handleLogin()">Login</button>
+<label>
+      <input type="checkbox" checked="checked"> Remember me
+</label>
+</form>
+<script>
+function sha1(str) {
+  // We transform the string into an arraybuffer.
+  var buffer = new TextEncoder("utf-8").encode(str);
+  return crypto.subtle.digest("SHA-1", buffer).then(function (hash) {
+    return hex(hash);
+  });
+}
+
+function sha256(str) {
+  // We transform the string into an arraybuffer.
+  var buffer = new TextEncoder("utf-8").encode(str);
+  return crypto.subtle.digest("SHA-256", buffer).then(function (hash) {
+    return hex(hash);
+  });
+}
+
+function hex(buffer) {
+  var hexCodes = [];
+  var view = new DataView(buffer);
+  console.log("view:\n");
+  console.log(view);
+  for (var i = 0; i < view.byteLength; i += 4) {
+    // Using getUint32 reduces the number of iterations needed (we process 4 bytes each time)
+    var value = view.getUint32(i);
+    // toString(16) will give the hex representation of the number without padding
+    var stringValue = value.toString(16);
+    // We use concatenation and slice for padding
+    //var padding = '00000000';
+    //var paddedValue = (padding + stringValue).slice(-padding.length);
+    //hexCodes.push(paddedValue);
+    hexCodes.push(stringValue);
+    console.log(stringValue+"::"+stringValue);
+    //alert("hello");
+  }
+
+  // Join all the hex strings into one
+  return hexCodes.join("");
+}
+var globhash;
+
+var getCookieVal = function(name){
+    var re = new RegExp(name + "=([^;]+)");
+    var value = re.exec(document.cookie);
+    return (value != null) ? unescape(value[1]) : null;
+};
+
+var handleLogin = function(){
+  console.log("handling login");
+  var password = $("#password").val();
+  //alert("salt:"+getCookieVal("salt"));
+  // talk to server -> if credentials correct -> set cookies:
+  sha256(password+getCookieVal("salt")).then(function(hash){document.cookie = "sessionid="+hash;globhash=hash;});  // no expires for now: "; expires=Thu, 18 Dec 2013 12:00:00 UTC"
+  console.log("now redirecting ...");
+  window.location.href = "\\";
+  console.log("redirecting to"+window.location);
+  return false;
+}
+</script>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>mini-file-cloud</title>
+  <style>
+  {{CSS}}
+  </style>
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+</head>
+<body>
+  <div id="external-file-drop-zone" ondragover="dragover_handler(event);" ondragend="dragend_handler(event);">
+  <div id="header-bar">
+    <div id="header-inner">
+      mini-file-cloud
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="main-content-inner">
+      {{MainContent}}
+    </div>
+  <div id="upload-form-div">
+  <form enctype="multipart/form-data" action="/upload" method="post" id="uploadform">
+    <input type="file" name="uploadfile" />
+    <input type="hidden" name="token" value="{{.}}"/>
+    <input type="submit" value="upload" id="innerupload"/>
+  </form>
+  </div>
+  </div>
+  <script>
+  var encountered = false;
+  $('#uploadform').submit(function(ev) {
+    ev.preventDefault(); // to stop the form from submitting
+    /* Validations go here */
+    if(!encountered){
+      encountered = true;
+      var newLocationArray = "" + window.location.href;
+      // TODO: change this mess:
+      newLocationArray = newLocationArray.split("/");
+      //alert(newLocation);
+      var newLocation = "";
+      var urlloopcnt = 0;
+      for (;urlloopcnt<newLocationArray.length;urlloopcnt++) {
+        if(urlloopcnt > 2){
+          newLocation += newLocationArray[urlloopcnt];
+          newLocation += "~";
+        }
+      };
+
+      $('#uploadform').attr('action', "/upload?thedir="+newLocation);
+      this.submit();
+      $('#uploadform').submit();
+    }
+  });
+  </script>
+  <div id="footer-bar">
+    <div id="footer-inner">
+      © 2018 Jan Wollschläger
+    </div>
+  </div>
+
+  <script>
+  // we use this flag to prevent
+  // flickering of the outline
+  var _highlightable = true;
+  var dragover_handler = function(evt){
+    evt.preventDefault();
+    console.log("you dragged a file!!!");
+    if (_highlightable)
+      $(".main-content-inner").addClass("highlight-outline");
+    setTimeout(function () {
+            _highlightable = false;
+            $(".main-content-inner").removeClass('highlight-outline');
+    }, 2000);
+    setTimeout(function () {
+            _highlightable = true;
+    }, 8000);
+
+  };
+
+  $( function() {
+  var currentlyDraggedObj = null;
+  $( ".draggable" ).draggable(
+    {
+    drag: function(e) {
+      currentlyDraggedObj = e.target;
+      console.log("draging "+currentlyDraggedObj);
+    },
+    // make sure the element is
+    // moved back to its original
+    // position.
+    revert: true
+    }
+  );// outside of draggable
+
+  var makeMove = function(moveFrom,moveTo){
+    console.log("you want to move "+moveFrom+" to "+moveTo);
+    $.ajax({
+      url: "/move",
+      data: {"moving-file":moveFrom+"","moving-to":moveTo+""},
+      type: 'post',
+      success: function (data) {
+              // reload entire page
+              // so that update visible
+              location.reload();
+      },
+      dataType: 'json',
+    });
+  };
+  $( ".draggable" ).droppable(
+    {
+    drop: function(e) {
+      console.log("drop!!");
+      makeMove(currentlyDraggedObj,e.target);
+      // dont forget to reset dragged obj
+      currentlyDraggedObj = null;
+    }
+    }
+  );// outside of droppable
+  } // outside of function in $
+  );// outside of $
+  </script>
+  </div><!-- End of external file drop zone div -->
+</body>
+</html>
